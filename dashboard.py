@@ -43,7 +43,7 @@ provide reliable 24/7 clean electricity for a 100 GW target across India? (20% r
 
 # Sidebar
 st.sidebar.header("Settings")
-scenario = st.sidebar.radio("Dispatch Strategy", ["Greedy", "Optimized", "Compare Both"])
+scenario = st.sidebar.radio("Dispatch Strategy", ["Optimized", "Greedy", "Compare Both"])
 
 # Get data based on selection
 if scenario == "Greedy":
@@ -231,10 +231,16 @@ fig_compare_95.update_layout(
 )
 st.plotly_chart(fig_compare_95, use_container_width=True)
 
-st.markdown("""
-**Key Insight:** With 120 plants (20% reserve margin) targeting 100 GW:
-- **At 100% threshold**: Individual plants achieve ~88% hourly availability, aggregate achieves ~80%
-- **At 95% threshold**: Individual plants achieve ~89% hourly availability, aggregate achieves ~85%
+# Calculate actual values for key insight
+ind_100 = df_100['Individual (avg)'].iloc[0]  # Hourly individual at 100%
+agg_100 = df_100['Aggregate'].iloc[0]  # Hourly aggregate at 100%
+ind_95 = df_95['Individual (avg)'].iloc[0]  # Hourly individual at 95%
+agg_95 = df_95['Aggregate'].iloc[0]  # Hourly aggregate at 95%
+
+st.markdown(f"""
+**Key Insight ({scenario_label}):** With 120 plants (20% reserve margin) targeting 100 GW:
+- **At 100% threshold**: Individual plants achieve {ind_100:.0f}% hourly availability, aggregate achieves {agg_100:.0f}%
+- **At 95% threshold**: Individual plants achieve {ind_95:.0f}% hourly availability, aggregate achieves {agg_95:.0f}%
 - **Reserve margin benefit**: The 20% extra capacity (120 plants for 100 GW) significantly improves aggregate reliability
 - At longer time scales (weekly, annual), variability smooths out and availability approaches 100%
 """)
@@ -242,8 +248,8 @@ st.markdown("""
 # Correlation Proof Section
 st.header(f"🔗 Why Individual ≠ Aggregate? Correlated Failures ({scenario_label})")
 
-st.markdown("""
-If each plant achieves 1 GW for ~88% of hours, why doesn't the aggregate easily exceed 100 GW?
+st.markdown(f"""
+If each plant achieves 1 GW for ~{ind_100:.0f}% of hours, why doesn't the aggregate easily exceed 100 GW?
 **Answer: When plants fail, they fail TOGETHER due to weather correlation.**
 """)
 
@@ -406,11 +412,11 @@ with st.expander("ℹ️ How to read this heatmap"):
     - Daytime hours show more green (solar recharging)
     """.replace("{worst_week}", str(worst_week + 1)))
 
-st.markdown("""
-**Summary: Why 88% individual ≠ 100 GW aggregate**
+st.markdown(f"""
+**Summary ({scenario_label}): Why {ind_100:.0f}% individual ≠ {agg_100:.0f}% aggregate at 100 GW**
 1. **Correlated failures:** Weather affects all plants simultaneously (vertical red bands)
-2. **Deep failures:** When plants fail, they output only 0.26 GW, not 0.88 GW (batteries depleted)
-3. **Result:** Even though each plant averages 88% availability, during bad hours most plants fail together, dragging aggregate well below 100 GW
+2. **Deep failures:** When plants fail, they output only {avg_when_fail:.2f} GW, not ~0.88 GW (batteries depleted)
+3. **Result:** Even though each plant averages {ind_100:.0f}% availability, during bad hours most plants fail together, dragging aggregate below 100 GW
 """)
 
 # Footer
