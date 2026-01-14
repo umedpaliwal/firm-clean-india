@@ -321,17 +321,6 @@ st.markdown(f"**% of hours both plants fail (<1 GW):**")
 df_joint = pd.DataFrame(joint_fail_matrix, index=state_names, columns=state_names).round(1)
 st.dataframe(df_joint, use_container_width=True)
 
-# Compare to expected if independent
-raj_rate = raj_fail.mean()
-tn_rate = tn_fail.mean()
-expected_joint = raj_rate * tn_rate * 100
-actual_joint = ((raj_fail == 1) & (tn_fail == 1)).sum() / 8760 * 100
-ratio = actual_joint / expected_joint if expected_joint > 0 else 0
-
-st.markdown(f"""
-**Rajasthan-Tamil Nadu:** Actual joint failure = {actual_joint:.1f}%, Expected if independent = {expected_joint:.1f}% → **{ratio:.1f}x more** than independent.
-Plants fail together more often than chance — this is why coordination matters.
-""")
 
 # Correlation Proof Section
 st.header(f"🔗 Understanding the Gap: Individual vs Aggregate ({scenario_label})")
@@ -511,8 +500,7 @@ When plants fail, they output only {avg_when_fail:.2f} GW on average (batteries 
 - This {opt_agg_100 - greedy_agg_100:.0f} percentage point gap shows that **battery coordination** matters enormously
 
 **Conclusion:** 120 distributed solar+storage plants CAN provide ~{opt_agg_100:.0f}% hourly availability at 100 GW
-through geographic diversity + coordinated battery management. The key is not just building more plants,
-but operating them intelligently with forecasting and coordination.
+through geographic diversity + coordinated battery management.
 """)
 
 # Footer
