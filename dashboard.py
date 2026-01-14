@@ -288,20 +288,25 @@ The **{opt_agg_100 - greedy_agg_100:.0f} percentage point improvement** comes fr
 """)
 
 # Regional Correlation Section
-st.header("🌍 Regional Correlation")
+st.header("🌍 Plant-Level Failure Correlation")
 
-# Get indices for specific states
+# Get one representative plant from each state
 greedy_out = greedy['output']
 raj_idx = sites[sites['state'] == 'Rajasthan'].index.tolist()
 tn_idx = sites[sites['state'] == 'Tamil Nadu'].index.tolist()
 assam_idx = sites[sites['state'] == 'Assam'].index.tolist()
 
-# Binary failure (<1 GW) for each state's plants, averaged per hour
-raj_fail = (greedy_out[:, raj_idx] < 1.0).mean(axis=1) if raj_idx else np.zeros(8760)
-tn_fail = (greedy_out[:, tn_idx] < 1.0).mean(axis=1) if tn_idx else np.zeros(8760)
-assam_fail = (greedy_out[:, assam_idx] < 1.0).mean(axis=1) if assam_idx else np.zeros(8760)
+# Pick first plant from each state
+raj_plant = raj_idx[0] if raj_idx else None
+tn_plant = tn_idx[0] if tn_idx else None
+assam_plant = assam_idx[0] if assam_idx else None
 
-# Correlation matrix (of failure rates)
+# Binary failure (<1 GW) for each plant across 8760 hours
+raj_fail = (greedy_out[:, raj_plant] < 1.0).astype(int) if raj_plant is not None else np.zeros(8760)
+tn_fail = (greedy_out[:, tn_plant] < 1.0).astype(int) if tn_plant is not None else np.zeros(8760)
+assam_fail = (greedy_out[:, assam_plant] < 1.0).astype(int) if assam_plant is not None else np.zeros(8760)
+
+# Correlation matrix (plant-level binary failure)
 states_data = {'Rajasthan': raj_fail, 'Tamil Nadu': tn_fail, 'Assam': assam_fail}
 state_names = ['Rajasthan', 'Tamil Nadu', 'Assam']
 corr_matrix = np.zeros((3, 3))
@@ -309,18 +314,18 @@ for i, s1 in enumerate(state_names):
     for j, s2 in enumerate(state_names):
         corr_matrix[i, j] = np.corrcoef(states_data[s1], states_data[s2])[0, 1]
 
-st.markdown(f"**Correlation of failure (<1 GW) between states:**")
+st.markdown(f"**Correlation of failure (<1 GW) between representative plants:**")
 df_corr = pd.DataFrame(corr_matrix, index=state_names, columns=state_names).round(2)
 st.dataframe(df_corr, use_container_width=True)
 
 # Conditional performance
-raj_failing_hours = raj_fail > 0.5  # Hours when >50% of Rajasthan plants failing
-tn_fail_overall = tn_fail.mean()
-tn_fail_when_raj_fails = tn_fail[raj_failing_hours].mean() if raj_failing_hours.sum() > 0 else 0
+raj_failing_hours = raj_fail == 1
+tn_fail_overall = tn_fail.mean() * 100
+tn_fail_when_raj_fails = tn_fail[raj_failing_hours].mean() * 100 if raj_failing_hours.sum() > 0 else 0
 
 st.markdown(f"""
-**Conditional:** When Rajasthan fails (>50% plants <1 GW), Tamil Nadu failure rate rises from {tn_fail_overall*100:.0f}% to {tn_fail_when_raj_fails*100:.0f}%.
-They fail together — this is why coordination matters.
+**Conditional:** When Rajasthan plant fails, Tamil Nadu plant failure rate rises from {tn_fail_overall:.0f}% to {tn_fail_when_raj_fails:.0f}%.
+Plants fail together — this is why coordination matters.
 """)
 
 # Correlation Proof Section
