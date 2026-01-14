@@ -296,32 +296,31 @@ raj_idx = sites[sites['state'] == 'Rajasthan'].index.tolist()
 tn_idx = sites[sites['state'] == 'Tamil Nadu'].index.tolist()
 assam_idx = sites[sites['state'] == 'Assam'].index.tolist()
 
-# Binary success (>=1 GW) for each state's plants, averaged per hour
-raj_success = (greedy_out[:, raj_idx] >= 1.0).mean(axis=1) if raj_idx else np.zeros(8760)
-tn_success = (greedy_out[:, tn_idx] >= 1.0).mean(axis=1) if tn_idx else np.zeros(8760)
-assam_success = (greedy_out[:, assam_idx] >= 1.0).mean(axis=1) if assam_idx else np.zeros(8760)
+# Binary failure (<1 GW) for each state's plants, averaged per hour
+raj_fail = (greedy_out[:, raj_idx] < 1.0).mean(axis=1) if raj_idx else np.zeros(8760)
+tn_fail = (greedy_out[:, tn_idx] < 1.0).mean(axis=1) if tn_idx else np.zeros(8760)
+assam_fail = (greedy_out[:, assam_idx] < 1.0).mean(axis=1) if assam_idx else np.zeros(8760)
 
-# Correlation matrix (of binary success rates)
-states_data = {'Rajasthan': raj_success, 'Tamil Nadu': tn_success, 'Assam': assam_success}
+# Correlation matrix (of failure rates)
+states_data = {'Rajasthan': raj_fail, 'Tamil Nadu': tn_fail, 'Assam': assam_fail}
 state_names = ['Rajasthan', 'Tamil Nadu', 'Assam']
 corr_matrix = np.zeros((3, 3))
 for i, s1 in enumerate(state_names):
     for j, s2 in enumerate(state_names):
         corr_matrix[i, j] = np.corrcoef(states_data[s1], states_data[s2])[0, 1]
 
-st.markdown(f"**Correlation of success (>=1 GW) between states:**")
+st.markdown(f"**Correlation of failure (<1 GW) between states:**")
 df_corr = pd.DataFrame(corr_matrix, index=state_names, columns=state_names).round(2)
 st.dataframe(df_corr, use_container_width=True)
 
 # Conditional performance
-raj_failing = raj_success < 0.5  # Hours when <50% of Rajasthan plants at 1 GW
-tn_overall = tn_success.mean()
-tn_when_raj_fails = tn_success[raj_failing].mean() if raj_failing.sum() > 0 else 0
-drop_pct = (1 - tn_when_raj_fails / tn_overall) * 100 if tn_overall > 0 else 0
+raj_failing_hours = raj_fail > 0.5  # Hours when >50% of Rajasthan plants failing
+tn_fail_overall = tn_fail.mean()
+tn_fail_when_raj_fails = tn_fail[raj_failing_hours].mean() if raj_failing_hours.sum() > 0 else 0
 
 st.markdown(f"""
-**Conditional performance:** When Rajasthan fails (<50% at 1 GW), Tamil Nadu's success rate drops from {tn_overall*100:.0f}% to {tn_when_raj_fails*100:.0f}% (-{drop_pct:.0f}%).
-Regions don't fully compensate — this is why coordination matters.
+**Conditional:** When Rajasthan fails (>50% plants <1 GW), Tamil Nadu failure rate rises from {tn_fail_overall*100:.0f}% to {tn_fail_when_raj_fails*100:.0f}%.
+They fail together — this is why coordination matters.
 """)
 
 # Correlation Proof Section
