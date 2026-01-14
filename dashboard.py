@@ -45,6 +45,17 @@ provide reliable 24/7 clean electricity for a 100 GW target across India? (20% r
 st.sidebar.header("Settings")
 scenario = st.sidebar.radio("Dispatch Strategy", ["Optimized", "Greedy"])
 
+# Research paper download
+st.sidebar.markdown("---")
+st.sidebar.header("📄 Research Paper")
+with open(f"{DATA_DIR}/research_paper.pdf", "rb") as pdf_file:
+    st.sidebar.download_button(
+        label="Download Full Paper (PDF)",
+        data=pdf_file,
+        file_name="Firm_Solar_Power_India.pdf",
+        mime="application/pdf"
+    )
+
 with st.sidebar.expander("ℹ️ What do these mean?"):
     st.markdown("""
 **Greedy Dispatch:**
