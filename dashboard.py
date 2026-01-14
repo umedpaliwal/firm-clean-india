@@ -288,7 +288,7 @@ The **{opt_agg_100 - greedy_agg_100:.0f} percentage point improvement** comes fr
 """)
 
 # Regional Correlation Section
-st.header("🌍 Plant-Level Failure Correlation")
+st.header("🌍 Joint Failure Analysis")
 
 # Get one representative plant from each state
 greedy_out = greedy['output']
@@ -306,26 +306,31 @@ raj_fail = (greedy_out[:, raj_plant] < 1.0).astype(int) if raj_plant is not None
 tn_fail = (greedy_out[:, tn_plant] < 1.0).astype(int) if tn_plant is not None else np.zeros(8760)
 assam_fail = (greedy_out[:, assam_plant] < 1.0).astype(int) if assam_plant is not None else np.zeros(8760)
 
-# Correlation matrix (plant-level binary failure)
+# Joint failure percentages
 states_data = {'Rajasthan': raj_fail, 'Tamil Nadu': tn_fail, 'Assam': assam_fail}
 state_names = ['Rajasthan', 'Tamil Nadu', 'Assam']
-corr_matrix = np.zeros((3, 3))
+
+# Calculate joint failure matrix (% of hours both fail)
+joint_fail_matrix = np.zeros((3, 3))
 for i, s1 in enumerate(state_names):
     for j, s2 in enumerate(state_names):
-        corr_matrix[i, j] = np.corrcoef(states_data[s1], states_data[s2])[0, 1]
+        both_fail = ((states_data[s1] == 1) & (states_data[s2] == 1)).sum()
+        joint_fail_matrix[i, j] = both_fail / 8760 * 100
 
-st.markdown(f"**Correlation of failure (<1 GW) between representative plants:**")
-df_corr = pd.DataFrame(corr_matrix, index=state_names, columns=state_names).round(2)
-st.dataframe(df_corr, use_container_width=True)
+st.markdown(f"**% of hours both plants fail (<1 GW):**")
+df_joint = pd.DataFrame(joint_fail_matrix, index=state_names, columns=state_names).round(1)
+st.dataframe(df_joint, use_container_width=True)
 
-# Conditional performance
-raj_failing_hours = raj_fail == 1
-tn_fail_overall = tn_fail.mean() * 100
-tn_fail_when_raj_fails = tn_fail[raj_failing_hours].mean() * 100 if raj_failing_hours.sum() > 0 else 0
+# Compare to expected if independent
+raj_rate = raj_fail.mean()
+tn_rate = tn_fail.mean()
+expected_joint = raj_rate * tn_rate * 100
+actual_joint = ((raj_fail == 1) & (tn_fail == 1)).sum() / 8760 * 100
+ratio = actual_joint / expected_joint if expected_joint > 0 else 0
 
 st.markdown(f"""
-**Conditional:** When Rajasthan plant fails, Tamil Nadu plant failure rate rises from {tn_fail_overall:.0f}% to {tn_fail_when_raj_fails:.0f}%.
-Plants fail together — this is why coordination matters.
+**Rajasthan-Tamil Nadu:** Actual joint failure = {actual_joint:.1f}%, Expected if independent = {expected_joint:.1f}% → **{ratio:.1f}x more** than independent.
+Plants fail together more often than chance — this is why coordination matters.
 """)
 
 # Correlation Proof Section
