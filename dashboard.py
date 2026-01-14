@@ -237,20 +237,30 @@ agg_100 = df_100['Aggregate'].iloc[0]  # Hourly aggregate at 100%
 ind_95 = df_95['Individual (avg)'].iloc[0]  # Hourly individual at 95%
 agg_95 = df_95['Aggregate'].iloc[0]  # Hourly aggregate at 95%
 
+# Calculate greedy vs optimized for comparison
+greedy_agg_100 = (greedy['output'].sum(axis=1) >= 100).mean() * 100
+opt_agg_100 = (optimized['output'].sum(axis=1) >= 100).mean() * 100
+
 st.markdown(f"""
 **Key Insight ({scenario_label}):** With 120 plants (20% reserve margin) targeting 100 GW:
 - **At 100% threshold**: Individual plants achieve {ind_100:.0f}% hourly availability, aggregate achieves {agg_100:.0f}%
 - **At 95% threshold**: Individual plants achieve {ind_95:.0f}% hourly availability, aggregate achieves {agg_95:.0f}%
-- **Reserve margin benefit**: The 20% extra capacity (120 plants for 100 GW) significantly improves aggregate reliability
-- At longer time scales (weekly, annual), variability smooths out and availability approaches 100%
+""")
+
+st.markdown(f"""
+**Critical Finding - Coordination matters more than diversification:**
+- **Greedy dispatch** (each plant operates independently): {greedy_agg_100:.0f}% hours ≥100 GW
+- **Optimized dispatch** (coordinated battery management): {opt_agg_100:.0f}% hours ≥100 GW
+
+Geographic diversity alone (greedy) achieves ~{greedy_agg_100:.0f}% reliability. Adding coordination (optimized) achieves ~{opt_agg_100:.0f}%.
+The **{opt_agg_100 - greedy_agg_100:.0f} percentage point improvement** comes from smart battery coordination, not more plants.
 """)
 
 # Correlation Proof Section
-st.header(f"🔗 Why Individual ≠ Aggregate? Correlated Failures ({scenario_label})")
+st.header(f"🔗 Understanding the Gap: Individual vs Aggregate ({scenario_label})")
 
 st.markdown(f"""
-If each plant achieves 1 GW for ~{ind_100:.0f}% of hours, why doesn't the aggregate easily exceed 100 GW?
-**Answer: When plants fail, they fail TOGETHER due to weather correlation.**
+Individual plants achieve {ind_100:.0f}% availability at 1 GW. What determines aggregate performance?
 """)
 
 output_corr = output_selected  # Use scenario-selected output
@@ -413,10 +423,19 @@ with st.expander("ℹ️ How to read this heatmap"):
     """.replace("{worst_week}", str(worst_week + 1)))
 
 st.markdown(f"""
-**Summary ({scenario_label}): Why {ind_100:.0f}% individual ≠ {agg_100:.0f}% aggregate at 100 GW**
-1. **Correlated failures:** Weather affects all plants simultaneously (vertical red bands)
-2. **Deep failures:** When plants fail, they output only {avg_when_fail:.2f} GW, not ~0.88 GW (batteries depleted)
-3. **Result:** Even though each plant averages {ind_100:.0f}% availability, during bad hours most plants fail together, dragging aggregate below 100 GW
+**Summary ({scenario_label}):**
+
+**Weather correlation exists** - the vertical red bands show plants are affected by similar weather patterns.
+When plants fail, they output only {avg_when_fail:.2f} GW on average (batteries depleted).
+
+**But correlation is NOT the whole story:**
+- If weather correlation were the main constraint, coordinated dispatch couldn't help much
+- Yet optimized dispatch achieves **{opt_agg_100:.0f}%** vs greedy's **{greedy_agg_100:.0f}%** at 100 GW target
+- This {opt_agg_100 - greedy_agg_100:.0f} percentage point gap shows that **battery coordination** matters enormously
+
+**Conclusion:** 120 distributed solar+storage plants CAN provide ~{opt_agg_100:.0f}% hourly availability at 100 GW
+through geographic diversity + coordinated battery management. The key is not just building more plants,
+but operating them intelligently with forecasting and coordination.
 """)
 
 # Footer
