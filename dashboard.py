@@ -43,7 +43,7 @@ provide reliable 24/7 clean electricity for a 100 GW target across India? (20% r
 
 # Sidebar
 st.sidebar.header("Settings")
-scenario = st.sidebar.radio("Dispatch Strategy", ["Optimized", "Greedy", "Compare Both"])
+scenario = st.sidebar.radio("Dispatch Strategy", ["Optimized", "Greedy"])
 
 with st.sidebar.expander("ℹ️ What do these mean?"):
     st.markdown("""
@@ -68,61 +68,41 @@ Central coordinator with perfect foresight:
 if scenario == "Greedy":
     output = greedy['output']
     battery = greedy['battery']
-elif scenario == "Optimized":
+else:  # Optimized
     output = optimized['output']
     battery = optimized['battery']
-else:
-    g_output = greedy['output']
-    o_output = optimized['output']
 
 # Main metrics
 st.header("📊 Key Results")
 
-if scenario != "Compare Both":
-    agg = output.sum(axis=1)
-    n_plants = output.shape[1]
+agg = output.sum(axis=1)
+n_plants = output.shape[1]
 
-    # Aggregate metrics
-    st.subheader("Aggregate (120 plants → 100 GW target)")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Energy Delivered", f"{agg.sum()/1000:.0f} TWh", f"{agg.sum()/(100*8760)*100:.1f}% of target")
-    with col2:
-        st.metric("Hours ≥100 GW", f"{(agg >= 100).sum()}", f"{(agg >= 100).sum()/8760*100:.1f}%")
-    with col3:
-        st.metric("Hours ≥95 GW", f"{(agg >= 95).sum()}", f"{(agg >= 95).sum()/8760*100:.1f}%")
-    with col4:
-        st.metric("Worst Hour", f"{agg.min():.1f} GW", "of 100 GW target")
+# Aggregate metrics
+st.subheader("Aggregate (120 plants → 100 GW target)")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Energy Delivered", f"{agg.sum()/1000:.0f} TWh", f"{agg.sum()/(100*8760)*100:.1f}% of target")
+with col2:
+    st.metric("Hours ≥100 GW", f"{(agg >= 100).sum()}", f"{(agg >= 100).sum()/8760*100:.1f}%")
+with col3:
+    st.metric("Hours ≥95 GW", f"{(agg >= 95).sum()}", f"{(agg >= 95).sum()/8760*100:.1f}%")
+with col4:
+    st.metric("Worst Hour", f"{agg.min():.1f} GW", "of 100 GW target")
 
-    # Per-plant metrics
-    st.subheader("Per-Plant (each plant → 1 GW target)")
-    plant_hours_100 = (output >= 1.0).sum(axis=0)  # Hours at full 1 GW
-    plant_hours_95 = (output >= 0.95).sum(axis=0)  # Hours at 0.95 GW
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Avg Hours ≥1 GW", f"{plant_hours_100.mean():.0f}", f"{plant_hours_100.mean()/8760*100:.1f}%")
-    with col2:
-        st.metric("Avg Hours ≥0.95 GW", f"{plant_hours_95.mean():.0f}", f"{plant_hours_95.mean()/8760*100:.1f}%")
-    with col3:
-        st.metric("Best Plant ≥1 GW", f"{plant_hours_100.max():.0f}", f"{plant_hours_100.max()/8760*100:.1f}%")
-    with col4:
-        st.metric("Worst Plant ≥1 GW", f"{plant_hours_100.min():.0f}", f"{plant_hours_100.min()/8760*100:.1f}%")
-else:
-    g_agg = g_output.sum(axis=1)
-    o_agg = o_output.sum(axis=1)
-
-    st.subheader("Aggregate Comparison (120 plants → 100 GW target)")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**Greedy Dispatch**")
-        st.metric("Hours ≥100 GW", f"{(g_agg >= 100).sum()}", f"{(g_agg >= 100).sum()/8760*100:.1f}%")
-        st.metric("Hours ≥95 GW", f"{(g_agg >= 95).sum()}", f"{(g_agg >= 95).sum()/8760*100:.1f}%")
-        st.metric("Worst Hour", f"{g_agg.min():.1f} GW")
-    with col2:
-        st.markdown("**Optimized Dispatch**")
-        st.metric("Hours ≥100 GW", f"{(o_agg >= 100).sum()}", f"{(o_agg >= 100).sum()/8760*100:.1f}%")
-        st.metric("Hours ≥95 GW", f"{(o_agg >= 95).sum()}", f"{(o_agg >= 95).sum()/8760*100:.1f}%")
-        st.metric("Worst Hour", f"{o_agg.min():.1f} GW", f"+{o_agg.min() - g_agg.min():.1f} GW improvement")
+# Per-plant metrics
+st.subheader("Per-Plant (each plant → 1 GW target)")
+plant_hours_100 = (output >= 1.0).sum(axis=0)  # Hours at full 1 GW
+plant_hours_95 = (output >= 0.95).sum(axis=0)  # Hours at 0.95 GW
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Avg Hours ≥1 GW", f"{plant_hours_100.mean():.0f}", f"{plant_hours_100.mean()/8760*100:.1f}%")
+with col2:
+    st.metric("Avg Hours ≥0.95 GW", f"{plant_hours_95.mean():.0f}", f"{plant_hours_95.mean()/8760*100:.1f}%")
+with col3:
+    st.metric("Best Plant ≥1 GW", f"{plant_hours_100.max():.0f}", f"{plant_hours_100.max()/8760*100:.1f}%")
+with col4:
+    st.metric("Worst Plant ≥1 GW", f"{plant_hours_100.min():.0f}", f"{plant_hours_100.min()/8760*100:.1f}%")
 
 # Site Map
 st.header("🗺️ Site Locations")
@@ -140,10 +120,6 @@ st.plotly_chart(fig_map, use_container_width=True)
 
 # Time Series
 st.header("📈 Aggregate Output Over Time")
-if scenario != "Compare Both":
-    agg = output.sum(axis=1)
-else:
-    agg = g_agg  # Default to greedy for time series
 
 # Week selector
 week = st.slider("Select Week", 1, 52, 1)
@@ -151,11 +127,7 @@ start = (week - 1) * 168
 end = start + 168
 
 fig_ts = go.Figure()
-if scenario == "Compare Both":
-    fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=g_agg[start:end], name='Greedy', line=dict(color='green')))
-    fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=o_agg[start:end], name='Optimized', line=dict(color='blue')))
-else:
-    fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=agg[start:end], name=scenario))
+fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=agg[start:end], name=scenario))
 
 fig_ts.add_hline(y=100, line_dash="dash", line_color="red", annotation_text="Target: 100 GW")
 fig_ts.add_hline(y=90, line_dash="dot", line_color="orange", annotation_text="90% threshold")
