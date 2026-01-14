@@ -149,126 +149,97 @@ fig_ts.update_layout(
 )
 st.plotly_chart(fig_ts, use_container_width=True)
 
-# Individual vs Aggregate Comparison
-st.header("🔬 Individual vs Aggregate Availability")
-
-with st.expander("ℹ️ What do Hourly, Daily, Weekly, Annual mean?"):
-    st.markdown("""
-**How we measure availability at different time resolutions:**
-
-**Hourly:**
-- Look at each of the 8,760 hours individually
-- For each hour, check: Did the plant/aggregate meet the target?
-- Availability = % of hours that met the target
-- *Example: 85% hourly means 7,446 hours out of 8,760 met the target*
-
-**Daily:**
-- Average the output over each day (24 hours)
-- For each of the 365 days, check: Did the daily average meet the target?
-- Availability = % of days where the daily average met the target
-- *Example: 95% daily means 347 days out of 365 had average output ≥ target*
-
-**Weekly:**
-- Average the output over each week (168 hours)
-- For each of the 52 weeks, check: Did the weekly average meet the target?
-- Availability = % of weeks where the weekly average met the target
-- *Example: 100% weekly means all 52 weeks had average output ≥ target*
-
-**Annual:**
-- Average the output over the entire year (8,760 hours)
-- Check: Did the annual average meet the target?
-- Result is either 100% (yes) or 0% (no)
-
-**Why availability increases at longer time scales:**
-Short-term variability (clouds, nighttime) averages out over longer periods. A plant might fail for a few hours but still meet its daily or weekly average target.
-    """)
+# Reliability Metrics
+st.header("🔬 Reliability Metrics")
 
 # Use scenario-selected output
 if scenario == "Greedy":
     output_selected = greedy['output']
     scenario_label = "Greedy"
-elif scenario == "Optimized":
+else:  # Optimized
     output_selected = optimized['output']
     scenario_label = "Optimized"
-else:
-    output_selected = greedy['output']  # Default to greedy for comparison
-    scenario_label = "Greedy"
 
 output = output_selected
 n_plants = output.shape[1]
+agg_output = output.sum(axis=1)
 
-# Calculate availability at different time resolutions
-def calc_availability_dual(data, plant_threshold, agg_target):
-    """Calculate availability for individual plants and aggregate."""
-    # Hourly
-    plant_hourly = (data >= plant_threshold).mean(axis=0) * 100  # Per plant
-    agg_hourly = (data.sum(axis=1) >= agg_target).mean() * 100
+# Calculate meaningful metrics
+hours_ge_100 = (agg_output >= 100).sum()
+hours_ge_95 = (agg_output >= 95).sum()
 
-    # Daily
-    daily_plant = data.reshape(-1, 24, n_plants).mean(axis=1)  # (365, n_plants)
-    plant_daily = (daily_plant >= plant_threshold).mean(axis=0) * 100
-    agg_daily = (daily_plant.sum(axis=1) >= agg_target).mean() * 100
+# Days where ALL 24 hours >= 100 GW
+perfect_days = 0
+for d in range(365):
+    day_hours = agg_output[d*24:(d+1)*24]
+    if (day_hours >= 100).all():
+        perfect_days += 1
 
-    # Weekly (52 weeks)
-    weekly_plant = data[:8736].reshape(-1, 168, n_plants).mean(axis=1)  # (52, n_plants)
-    plant_weekly = (weekly_plant >= plant_threshold).mean(axis=0) * 100
-    agg_weekly = (weekly_plant.sum(axis=1) >= agg_target).mean() * 100
+# Days where minimum hour >= 95 GW
+good_days = 0
+for d in range(365):
+    day_hours = agg_output[d*24:(d+1)*24]
+    if day_hours.min() >= 95:
+        good_days += 1
 
-    # Annual
-    annual_plant = data.mean(axis=0)
-    plant_annual = (annual_plant >= plant_threshold).mean() * 100
-    agg_annual = 100 if data.sum(axis=1).mean() >= agg_target else 0
+# Energy metrics
+total_energy = agg_output.sum() / 1000  # TWh
+target_energy = 100 * 8760 / 1000  # TWh
 
-    return {
-        'Resolution': ['Hourly', 'Daily', 'Weekly', 'Annual'],
-        'Individual (avg)': [plant_hourly.mean(), plant_daily.mean(), plant_weekly.mean(), plant_annual],
-        'Aggregate': [agg_hourly, agg_daily, agg_weekly, agg_annual]
-    }
+# Display metrics
+st.subheader(f"Aggregate Reliability ({scenario_label})")
 
-# Show both thresholds
-st.subheader("At 100% threshold (Plant ≥1 GW, Aggregate ≥100 GW)")
-avail_100 = calc_availability_dual(output, plant_threshold=1.0, agg_target=100)
-df_100 = pd.DataFrame(avail_100)
-st.dataframe(df_100, use_container_width=True)
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Hours >= 100 GW", f"{hours_ge_100:,}", f"{hours_ge_100/8760*100:.1f}% of year")
+with col2:
+    st.metric("Perfect Days", f"{perfect_days}", f"{perfect_days/365*100:.1f}% (all 24h >= 100 GW)")
+with col3:
+    st.metric("Good Days", f"{good_days}", f"{good_days/365*100:.1f}% (min hour >= 95 GW)")
 
-st.subheader("At 95% threshold (Plant ≥0.95 GW, Aggregate ≥95 GW)")
-avail_95 = calc_availability_dual(output, plant_threshold=0.95, agg_target=95)
-df_95 = pd.DataFrame(avail_95)
-st.dataframe(df_95, use_container_width=True)
+with st.expander("ℹ️ What do these metrics mean?"):
+    st.markdown("""
+**Hours >= 100 GW:**
+- Out of 8,760 hours in a year, how many had aggregate output >= 100 GW?
+- This directly answers "What % of the time do we meet the target?"
 
-# Chart for 100% threshold
-fig_compare = go.Figure()
-fig_compare.add_trace(go.Bar(name='Individual Plant (avg)', x=df_100['Resolution'],
-                              y=df_100['Individual (avg)'], marker_color='#2ecc71'))
-fig_compare.add_trace(go.Bar(name='Aggregate (120→100 GW)', x=df_100['Resolution'],
-                              y=df_100['Aggregate'], marker_color='#3498db'))
-fig_compare.update_layout(
-    title='Availability: Individual vs Aggregate (100% threshold: 1 GW per plant, 100 GW aggregate)',
-    yaxis_title='Availability (%)',
-    yaxis_range=[0, 100],
-    barmode='group'
-)
-st.plotly_chart(fig_compare, use_container_width=True)
+**Perfect Days:**
+- Days where ALL 24 hours had output >= 100 GW
+- Stricter metric: not a single hour fell short that day
 
-# Chart for 95% threshold
-fig_compare_95 = go.Figure()
-fig_compare_95.add_trace(go.Bar(name='Individual Plant (avg)', x=df_95['Resolution'],
-                              y=df_95['Individual (avg)'], marker_color='#27ae60'))
-fig_compare_95.add_trace(go.Bar(name='Aggregate (120→95 GW)', x=df_95['Resolution'],
-                              y=df_95['Aggregate'], marker_color='#2980b9'))
-fig_compare_95.update_layout(
-    title='Availability: Individual vs Aggregate (95% threshold: 0.95 GW per plant, 95 GW aggregate)',
-    yaxis_title='Availability (%)',
-    yaxis_range=[0, 100],
-    barmode='group'
-)
-st.plotly_chart(fig_compare_95, use_container_width=True)
+**Good Days:**
+- Days where the MINIMUM hour was still >= 95 GW
+- Even the worst hour of the day was within 5% of target
+    """)
 
-# Calculate actual values for key insight
-ind_100 = df_100['Individual (avg)'].iloc[0]  # Hourly individual at 100%
-agg_100 = df_100['Aggregate'].iloc[0]  # Hourly aggregate at 100%
-ind_95 = df_95['Individual (avg)'].iloc[0]  # Hourly individual at 95%
-agg_95 = df_95['Aggregate'].iloc[0]  # Hourly aggregate at 95%
+# Summary table
+st.subheader("Summary Table")
+summary_data = {
+    'Metric': [
+        'Hours >= 100 GW',
+        'Hours >= 95 GW',
+        'Perfect Days (all 24h >= 100 GW)',
+        'Good Days (min hour >= 95 GW)',
+        'Energy Delivered',
+        'Worst Hour'
+    ],
+    'Value': [
+        f"{hours_ge_100:,} ({hours_ge_100/8760*100:.1f}%)",
+        f"{hours_ge_95:,} ({hours_ge_95/8760*100:.1f}%)",
+        f"{perfect_days} ({perfect_days/365*100:.1f}%)",
+        f"{good_days} ({good_days/365*100:.1f}%)",
+        f"{total_energy:.0f} TWh ({total_energy/target_energy*100:.1f}% of target)",
+        f"{agg_output.min():.1f} GW"
+    ]
+}
+df_summary = pd.DataFrame(summary_data)
+st.dataframe(df_summary, use_container_width=True, hide_index=True)
+
+# Calculate values for key insight
+ind_100 = (output >= 1.0).mean() * 100
+agg_100 = hours_ge_100 / 8760 * 100
+ind_95 = (output >= 0.95).mean() * 100
+agg_95 = hours_ge_95 / 8760 * 100
 
 # Calculate greedy vs optimized for comparison
 greedy_agg_100 = (greedy['output'].sum(axis=1) >= 100).mean() * 100
@@ -276,8 +247,9 @@ opt_agg_100 = (optimized['output'].sum(axis=1) >= 100).mean() * 100
 
 st.markdown(f"""
 **Key Insight ({scenario_label}):** With 120 plants (20% reserve margin) targeting 100 GW:
-- **At 100% threshold**: Individual plants achieve {ind_100:.0f}% hourly availability, aggregate achieves {agg_100:.0f}%
-- **At 95% threshold**: Individual plants achieve {ind_95:.0f}% hourly availability, aggregate achieves {agg_95:.0f}%
+- **Hourly reliability**: {agg_100:.1f}% of hours meet 100 GW target
+- **Perfect days**: {perfect_days/365*100:.1f}% of days have zero shortfall hours
+- **Individual plants**: Average {ind_100:.0f}% hourly availability at 1 GW
 """)
 
 st.markdown(f"""
