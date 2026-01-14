@@ -141,6 +141,37 @@ st.plotly_chart(fig_ts, use_container_width=True)
 # Individual vs Aggregate Comparison
 st.header("🔬 Individual vs Aggregate Availability")
 
+with st.expander("ℹ️ What do Hourly, Daily, Weekly, Annual mean?"):
+    st.markdown("""
+**How we measure availability at different time resolutions:**
+
+**Hourly:**
+- Look at each of the 8,760 hours individually
+- For each hour, check: Did the plant/aggregate meet the target?
+- Availability = % of hours that met the target
+- *Example: 85% hourly means 7,446 hours out of 8,760 met the target*
+
+**Daily:**
+- Average the output over each day (24 hours)
+- For each of the 365 days, check: Did the daily average meet the target?
+- Availability = % of days where the daily average met the target
+- *Example: 95% daily means 347 days out of 365 had average output ≥ target*
+
+**Weekly:**
+- Average the output over each week (168 hours)
+- For each of the 52 weeks, check: Did the weekly average meet the target?
+- Availability = % of weeks where the weekly average met the target
+- *Example: 100% weekly means all 52 weeks had average output ≥ target*
+
+**Annual:**
+- Average the output over the entire year (8,760 hours)
+- Check: Did the annual average meet the target?
+- Result is either 100% (yes) or 0% (no)
+
+**Why availability increases at longer time scales:**
+Short-term variability (clouds, nighttime) averages out over longer periods. A plant might fail for a few hours but still meet its daily or weekly average target.
+    """)
+
 # Use scenario-selected output
 if scenario == "Greedy":
     output_selected = greedy['output']
