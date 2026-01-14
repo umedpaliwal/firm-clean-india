@@ -143,7 +143,7 @@ fig_ts.add_hline(y=90, line_dash="dot", line_color="orange", annotation_text="90
 fig_ts.update_layout(
     title=f"Week {week} (Hours {start}-{end})",
     xaxis_title="Hour", yaxis_title="Aggregate Output (GW)",
-    yaxis_range=[0, 110], height=400
+    yaxis_range=[0, 130], height=400
 )
 st.plotly_chart(fig_ts, use_container_width=True)
 
