@@ -45,6 +45,25 @@ provide reliable 24/7 clean electricity for a 100 GW target across India? (20% r
 st.sidebar.header("Settings")
 scenario = st.sidebar.radio("Dispatch Strategy", ["Optimized", "Greedy", "Compare Both"])
 
+with st.sidebar.expander("ℹ️ What do these mean?"):
+    st.markdown("""
+**Greedy Dispatch:**
+Each plant operates independently, hour-by-hour:
+- If solar ≥ 1 GW: output 1 GW, charge battery with excess
+- If solar < 1 GW: discharge battery to reach 1 GW
+- No coordination between plants
+- No knowledge of future weather
+
+**Optimized Dispatch:**
+Central coordinator with perfect foresight:
+- Knows all 8,760 hours of solar generation in advance
+- Coordinates battery charge/discharge across all 120 plants
+- Minimizes total shortfall below 100 GW target
+- Uses Gurobi linear programming optimizer
+
+**Key difference:** Greedy reacts hour-by-hour; Optimized plans ahead to save battery for when it's needed most.
+    """)
+
 # Get data based on selection
 if scenario == "Greedy":
     output = greedy['output']
