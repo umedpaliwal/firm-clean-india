@@ -287,6 +287,49 @@ Geographic diversity alone (greedy) achieves ~{greedy_agg_100:.0f}% reliability.
 The **{opt_agg_100 - greedy_agg_100:.0f} percentage point improvement** comes from smart battery coordination, not more plants.
 """)
 
+# Regional Correlation Section
+st.header("🌍 Regional Correlation")
+
+# Classify sites by region
+def get_region(state):
+    northwest = ['Rajasthan', 'Gujarat', 'Punjab', 'Haryana']
+    south = ['Tamil Nadu', 'Karnataka', 'Andhra Pradesh', 'Telangana', 'Kerala']
+    if state in northwest:
+        return 'Northwest'
+    elif state in south:
+        return 'South'
+    else:
+        return 'Other'
+
+sites['region'] = sites['state'].apply(get_region)
+nw_idx = sites[sites['region'] == 'Northwest'].index.tolist()
+south_idx = sites[sites['region'] == 'South'].index.tolist()
+
+# Calculate metrics using greedy output (shows natural correlation)
+greedy_out = greedy['output']
+nw_hourly = greedy_out[:, nw_idx].mean(axis=1) if nw_idx else np.zeros(8760)
+south_hourly = greedy_out[:, south_idx].mean(axis=1) if south_idx else np.zeros(8760)
+
+# Inter-region correlation
+nw_south_corr = np.corrcoef(nw_hourly, south_hourly)[0, 1]
+
+# Conditional performance
+nw_failing = nw_hourly < 0.5
+south_overall = south_hourly.mean()
+south_when_nw_fails = south_hourly[nw_failing].mean() if nw_failing.sum() > 0 else 0
+
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Northwest-South Correlation", f"{nw_south_corr:.2f}", "0 = independent, 1 = identical")
+with col2:
+    drop_pct = (1 - south_when_nw_fails / south_overall) * 100 if south_overall > 0 else 0
+    st.metric("South when NW fails", f"{south_when_nw_fails:.2f} GW", f"vs {south_overall:.2f} GW overall (-{drop_pct:.0f}%)")
+
+st.markdown(f"""
+**Interpretation:** When Northwest fails, South drops {drop_pct:.0f}% — regions don't fully compensate each other.
+This is why coordination (not just diversification) is essential.
+""")
+
 # Correlation Proof Section
 st.header(f"🔗 Understanding the Gap: Individual vs Aggregate ({scenario_label})")
 
