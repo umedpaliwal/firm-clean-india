@@ -129,6 +129,32 @@ fig_map = px.scatter_mapbox(
 fig_map.update_layout(height=500)
 st.plotly_chart(fig_map, use_container_width=True)
 
+# Animation - Worst Week
+st.header("🎬 Animation: Worst Week in Action")
+st.markdown("""
+Watch how 120 plants respond during the **worst week of the year** (Week 38, monsoon season).
+- **Dot color**: Green = 1 GW output, Yellow = partial, Red = zero
+- **Dot size**: Battery state of charge (larger = more stored)
+- **Bottom chart**: Aggregate output vs 100 GW target
+""")
+
+# Display GIF
+import os
+gif_path = os.path.join(DATA_DIR, "worst_week_animation.gif")
+if os.path.exists(gif_path):
+    st.image(gif_path, caption="Worst Week (Week 38) - Optimized Dispatch", use_container_width=True)
+else:
+    st.warning("Animation file not found")
+
+with st.expander("ℹ️ What does this animation show?"):
+    st.markdown("""
+**Key observations:**
+1. **Geographic diversification**: When plants in one region dim (red), others stay green
+2. **Battery coordination**: Dot sizes change as batteries charge during day, discharge at night
+3. **Aggregate stability**: Despite individual plant variability, aggregate (bottom chart) stays relatively stable
+4. **Worst week challenge**: Even during the hardest week, optimized dispatch keeps output above 95 GW most hours
+    """)
+
 # Time Series
 st.header("📈 Aggregate Output Over Time")
 
