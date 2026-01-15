@@ -19,7 +19,7 @@ if not os.path.exists(DATA_DIR):
 
 
 @st.cache_data
-def load_data():
+def load_data(version="7GW_v1"):
     """Load all results."""
     sites = pd.read_csv(f"{DATA_DIR}/selected_sites.csv")
 
@@ -32,7 +32,7 @@ def load_data():
     return sites, greedy, optimized
 
 
-sites, greedy, optimized = load_data()
+sites, greedy, optimized = load_data("7GW_v1")
 
 # Header
 st.title("🌞 24/7 Clean Power from Solar+Storage in India")
