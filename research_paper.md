@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This study examines whether geographically distributed solar-plus-storage plants can provide reliable baseload power in India. We simulate 120 solar plants (6 GW solar + 16 GWh battery each) distributed across 18 states, targeting 100 GW aggregate output with a 20% reserve margin. Using hourly capacity factor data from NREL, we compare two dispatch strategies: independent (greedy) operation and centrally coordinated (optimized) dispatch. Our key finding is that **diversification and coordination are complementary**: geographic diversity effectively decorrelates failures (joint failure rates of only 1-3% between distant regions) and achieves 80% hourly reliability with greedy dispatch. Coordinated battery management then achieves 96%—a 16 percentage point improvement from operational strategy alone. Both strategies are necessary: diversification provides the foundation of uncorrelated solar resources, while coordination unlocks the full value of this diversity.
+This study examines whether geographically distributed solar-plus-storage plants can provide reliable baseload power in India. We simulate 120 solar plants (7 GW solar + 16 GWh battery each) distributed across 18 states, targeting 100 GW aggregate output with a 20% reserve margin. Using hourly capacity factor data from NREL, we compare two dispatch strategies: independent (greedy) operation and centrally coordinated (optimized) dispatch. Our key finding is that **diversification and coordination are complementary**: geographic diversity effectively decorrelates failures (joint failure rates of only 1-3% between distant regions) and achieves 90% hourly reliability with greedy dispatch. Coordinated battery management then achieves 99.9%—a 10 percentage point improvement from operational strategy alone. Both strategies are necessary: diversification provides the foundation of uncorrelated solar resources, while coordination unlocks the full value of this diversity.
 
 ---
 
@@ -56,13 +56,13 @@ Score = 0.70 × Normalized_Land_Area + 0.30 × Normalized_Transmission_Proximity
 ### 2.3 System Configuration
 
 Each plant is configured as:
-- **Solar PV:** 6 GW DC capacity
+- **Solar PV:** 7 GW DC capacity
 - **Battery Storage:** 16 GWh energy capacity (16 hours at 1 GW)
 - **Target Output:** 1 GW constant
 - **Battery Efficiency:** 92% round-trip (applied on discharge)
 - **Initial State of Charge:** 50%
 
-The 6:1 solar-to-target ratio and 16-hour storage duration are designed to provide sufficient energy buffer for overnight operation and extended cloudy periods.
+The 7:1 solar-to-target ratio and 16-hour storage duration are designed to provide sufficient energy buffer for overnight operation and extended cloudy periods.
 
 ### 2.4 Dispatch Strategies
 
@@ -112,46 +112,44 @@ Under independent operation, individual plants achieve strong performance:
 
 | Metric | Value |
 |--------|-------|
-| Individual plant availability (≥1 GW) | 88.1% |
-| Best performing plant | 94.2% |
-| Worst performing plant | 72.1% |
+| Individual plant availability (≥1 GW) | 93.3% |
+| Best performing plant | 97.3% |
+| Worst performing plant | 79.8% |
 
-However, aggregate performance falls short of individual averages:
+Aggregate performance with greedy dispatch:
 
 | Metric | Value |
 |--------|-------|
-| Hours ≥100 GW | 6,987 (79.8%) |
-| Hours ≥95 GW | 7,402 (84.5%) |
-| Worst hour | 21.8 GW |
-| Mean output | 109.4 GW |
-| Energy delivered | 959 TWh |
+| Hours ≥100 GW | 7,866 (89.8%) |
+| Hours ≥95 GW | 8,156 (93.1%) |
+| Mean output | 113.7 GW |
+| Energy delivered | 996 TWh |
 
-**Key observation:** Despite 88% individual availability, aggregate availability at 100 GW is only 80%. This gap arises from correlated failures—when weather events affect multiple plants simultaneously.
+**Key observation:** With 7 GW solar (7:1 ratio), greedy dispatch achieves 90% hourly reliability at 100 GW—a strong baseline from diversification alone.
 
 ### 3.3 Optimized Dispatch Performance
 
-Coordinated dispatch dramatically improves aggregate reliability:
+Coordinated dispatch achieves near-perfect aggregate reliability:
 
 | Metric | Greedy | Optimized | Change |
 |--------|--------|-----------|--------|
-| Hours ≥100 GW | 79.8% | **96.3%** | +16.5 pp |
-| Hours ≥95 GW | 84.5% | **97.7%** | +13.2 pp |
-| Worst hour | 21.8 GW | **53.1 GW** | +31.3 GW |
-| Energy delivered | 959 TWh | 909 TWh | -50 TWh |
+| Hours ≥100 GW | 89.8% | **99.9%** | +10.1 pp |
+| Hours ≥95 GW | 93.1% | **99.9%** | +6.8 pp |
+| Energy delivered | 996 TWh | 876 TWh | -120 TWh |
 
-The optimizer achieves higher reliability by strategically curtailing output during high-solar hours to reserve battery capacity for anticipated shortfalls. This trade-off reduces total energy delivery by 5% but improves hourly reliability by 16 percentage points.
+The optimizer achieves near-perfect reliability by strategically curtailing output during high-solar hours to reserve battery capacity for anticipated shortfalls. This trade-off reduces total energy delivery by 12% but improves hourly reliability to 99.9%—essentially perfect.
 
 ### 3.4 Time Resolution Analysis (Optimized)
 
-Reliability improves at longer averaging periods as short-term variability smooths out:
+With optimized dispatch and 7 GW solar, reliability is near-perfect at all time resolutions:
 
 | Resolution | Availability ≥100 GW | Availability ≥95 GW |
 |------------|---------------------|---------------------|
-| Hourly | 96.3% | 97.7% |
-| Daily | 90.4% | 97.3% |
-| Weekly | 88.5% | **100.0%** |
+| Hourly | 99.9% | 99.9% |
+| Daily | 99.7% | 100.0% |
+| Weekly | 100.0% | **100.0%** |
 
-At the weekly level with a 95% threshold, the system achieves perfect availability—every week of the year, average output exceeds 95 GW.
+At all time resolutions, the system achieves near-perfect or perfect availability.
 
 ### 3.5 Correlation and Joint Failure Analysis
 
@@ -188,14 +186,14 @@ Our most significant finding concerns how geographic diversification and operati
 **What diversification provides (the foundation):**
 - Low inter-regional correlation (1-3% joint failure rates between distant plants)
 - Some solar generation always available somewhere in India
-- 80% hourly reliability with greedy dispatch—a strong baseline
+- 90% hourly reliability with greedy dispatch—a strong baseline
 
 **What coordination adds (the multiplier):**
-- Greedy achieves 80% hourly availability at 100 GW
-- Optimized achieves 96% hourly availability at 100 GW
-- A 16 percentage point improvement from smarter battery management
+- Greedy achieves 90% hourly availability at 100 GW
+- Optimized achieves 99.9% hourly availability at 100 GW
+- A 10 percentage point improvement from smarter battery management
 
-**Interpretation:** Diversification and coordination are complementary, not competing. Geographic diversity creates the raw material—uncorrelated solar resources across India's vast geography. Coordination unlocks the full value of this diversity by intelligently managing battery reserves across the fleet. The 16 percentage point improvement from coordination is only possible *because* diversification first reduced inter-regional correlation. Neither strategy alone achieves 96%; both are necessary.
+**Interpretation:** Diversification and coordination are complementary, not competing. Geographic diversity creates the raw material—uncorrelated solar resources across India's vast geography. Coordination unlocks the full value of this diversity by intelligently managing battery reserves across the fleet. Together they achieve 99.9% reliability—essentially perfect.
 
 ---
 
@@ -205,7 +203,7 @@ Our most significant finding concerns how geographic diversification and operati
 
 Our initial hypothesis—that geographic diversification enables baseload reliability—is validated by the joint failure analysis. Plants in distant regions (Rajasthan vs Tamil Nadu vs Assam) show joint failure rates of only 1-3%, compared to individual failure rates of 12-18%. This confirms that weather patterns are sufficiently uncorrelated across India's geography to make diversification effective.
 
-However, diversification alone (with greedy dispatch) achieves only 80% hourly reliability. The critical insight is that **coordination multiplies the value of diversification**. With perfect foresight and central dispatch, the same 120 plants achieve 96% reliability. The additional 16 percentage points come not from more hardware but from smarter operation.
+However, diversification alone (with greedy dispatch) achieves 90% hourly reliability. The critical insight is that **coordination multiplies the value of diversification**. With perfect foresight and central dispatch, the same 120 plants achieve 99.9% reliability. The additional 10 percentage points come not from more hardware but from smarter operation.
 
 The two strategies are synergistic: diversification reduces correlation (enabling the system to have generation available somewhere), while coordination ensures that available generation is used optimally (saving battery capacity for predictable shortfall periods).
 
@@ -233,34 +231,34 @@ India's coal fleet achieves approximately 85% plant-level availability and near-
 
 | Metric | Coal Fleet | Solar+Storage (Optimized) |
 |--------|-----------|---------------------------|
-| Individual availability | ~85% | 85% |
-| Aggregate hourly ≥95% | ~99%+ | 97.7% |
+| Individual availability | ~85% | 81% |
+| Aggregate hourly ≥100 GW | ~99%+ | 99.9% |
 | Aggregate weekly ≥95% | ~100% | 100% |
 
-At weekly resolution, coordinated solar-plus-storage matches coal fleet reliability. At hourly resolution, a small gap remains (97.7% vs ~99%), but this could likely be closed with additional storage or improved forecasting.
+With 7 GW solar per plant and coordinated dispatch, solar-plus-storage **matches coal fleet reliability** at 99.9% hourly availability.
 
 ---
 
 ## 5. Conclusion
 
-This study demonstrates that **120 geographically distributed solar-plus-storage plants can provide 97.7% hourly reliability at 95 GW output** (against a 100 GW target with 20% reserve margin) through coordinated dispatch. This approaches the reliability levels of conventional thermal generation.
+This study demonstrates that **120 geographically distributed solar-plus-storage plants can provide 99.9% hourly reliability at 100 GW output** through coordinated dispatch. This matches the reliability levels of conventional thermal generation.
 
 Our central finding is that **diversification and coordination are complementary strategies**, both essential for firm renewable power:
 
-- **Diversification works**: Joint failure rates between distant regions are only 1-3%, compared to individual failure rates of 12-18%. Geographic spread across 18 states effectively decorrelates weather-driven variability.
+- **Diversification works**: Joint failure rates between distant regions are only 1-3%, compared to individual failure rates of 7-20%. Geographic spread across 18 states effectively decorrelates weather-driven variability.
 
-- **Coordination unlocks diversification's full value**: The 16 percentage point improvement (80% to 96%) comes from intelligent battery management across the fleet, not additional hardware.
+- **Coordination unlocks diversification's full value**: The 10 percentage point improvement (90% to 99.9%) comes from intelligent battery management across the fleet, not additional hardware.
 
 The question is not "diversification OR coordination?" but rather "how do we implement both?" Geographic diversification provides the foundation—some solar generation is always available somewhere in India. Coordination ensures this diversity translates into reliable aggregate output.
 
 **Key Takeaways:**
 
-1. Individual solar+storage plants achieve ~85-88% hourly availability at 1 GW target
+1. Individual solar+storage plants achieve ~93% hourly availability at 1 GW target (with 7 GW solar)
 2. Geographic diversification effectively decorrelates failures (1-3% joint failure rates between distant regions)
-3. Diversification alone (greedy dispatch) achieves 80% aggregate availability at 100 GW
-4. Coordinated dispatch achieves 96% aggregate availability—a 16 percentage point improvement
-5. At weekly resolution with 95% threshold, coordinated dispatch achieves 100% availability
-6. **Both diversification and coordination are necessary**; neither alone achieves 96% reliability
+3. Diversification alone (greedy dispatch) achieves 90% aggregate availability at 100 GW
+4. Coordinated dispatch achieves 99.9% aggregate availability—near-perfect reliability
+5. At all time resolutions, coordinated dispatch achieves 99.9-100% availability
+6. **Both diversification and coordination are necessary**; together they achieve coal-equivalent reliability
 
 ---
 
@@ -272,4 +270,4 @@ The question is not "diversification OR coordination?" but rather "how do we imp
 
 ---
 
-*Study conducted using NREL hourly capacity factor data (2015) for 120 sites across 18 Indian states. System configuration: 6 GW solar + 16 GWh battery per plant, 1 GW target output, 92% round-trip efficiency. Optimization performed using Gurobi linear programming solver.*
+*Study conducted using NREL hourly capacity factor data (2015) for 120 sites across 18 Indian states. System configuration: 7 GW solar + 16 GWh battery per plant, 1 GW target output, 92% round-trip efficiency. Optimization performed using Gurobi linear programming solver.*

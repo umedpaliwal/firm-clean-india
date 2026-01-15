@@ -37,7 +37,7 @@ sites, greedy, optimized = load_data()
 # Header
 st.title("🌞 24/7 Clean Power from Solar+Storage in India")
 st.markdown("""
-**Research Question:** Can 120 distributed solar+storage plants (6 GW solar + 16 GWh battery each)
+**Research Question:** Can 120 distributed solar+storage plants (7 GW solar + 16 GWh battery each)
 provide reliable 24/7 clean electricity for a 100 GW target across India? (20% reserve margin)
 """)
 
@@ -505,4 +505,4 @@ through geographic diversity + coordinated battery management.
 
 # Footer
 st.markdown("---")
-st.markdown("**Data:** NREL India Solar Resource Data (2015) | **Model:** 6 GW Solar + 16 GWh Battery per site")
+st.markdown("**Data:** NREL India Solar Resource Data (2015) | **Model:** 7 GW Solar + 16 GWh Battery per site")
