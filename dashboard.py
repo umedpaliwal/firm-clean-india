@@ -19,7 +19,7 @@ if not os.path.exists(DATA_DIR):
 
 
 @st.cache_data
-def load_data(version="7GW_v3_fp_fix"):
+def load_data(version="7GW_v4_diversification"):
     """Load all results."""
     sites = pd.read_csv(f"{DATA_DIR}/selected_sites.csv")
 
@@ -32,7 +32,7 @@ def load_data(version="7GW_v3_fp_fix"):
     return sites, greedy, optimized
 
 
-sites, greedy, optimized = load_data("7GW_v3_fp_fix")
+sites, greedy, optimized = load_data("7GW_v4_diversification")
 
 # Header
 st.title("🌞 24/7 Clean Power from Solar+Storage in India")
@@ -118,6 +118,32 @@ with col3:
 with col4:
     st.metric("Worst Plant ≥1 GW", f"{plant_hours_100.min():.0f}", f"{plant_hours_100.min()/8760*100:.1f}%")
 
+# Diversification Benefit - Key Insight
+st.subheader("🌍 The Power of Geographic Diversification")
+
+# Calculate greedy metrics for diversification comparison
+greedy_plant_avail = (greedy['output'] >= 1.0).mean(axis=0) * 100
+greedy_agg_avail = (greedy['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
+opt_agg_avail = (optimized['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Best Individual Plant", f"{greedy_plant_avail.max():.1f}%",
+              "Greedy dispatch", delta_color="off")
+with col2:
+    st.metric("120 Plants Aggregated", f"{greedy_agg_avail:.1f}%",
+              f"+{greedy_agg_avail - greedy_plant_avail.max():.1f}pp vs best plant", delta_color="off")
+with col3:
+    st.metric("+ Coordinated Dispatch", f"{opt_agg_avail:.1f}%",
+              f"+{opt_agg_avail - greedy_agg_avail:.1f}pp vs greedy", delta_color="off")
+
+st.success(f"""
+**Key Insight:** No single plant can exceed {greedy_plant_avail.max():.1f}% reliability, but **120 distributed plants achieve {greedy_agg_avail:.1f}%** through geographic diversification alone.
+Adding coordinated battery management pushes this to **{opt_agg_avail:.1f}%** — approaching perfect reliability.
+
+This works because weather patterns are not correlated across India's vast geography. When Gujarat has clouds, Tamil Nadu may have sun.
+""")
+
 # Site Map
 st.header("🗺️ Site Locations")
 fig_map = px.scatter_mapbox(
@@ -166,17 +192,26 @@ week = st.slider("Select Week", 1, 52, 1)
 start = (week - 1) * 168
 end = start + 168
 
+# Always show both greedy and optimized for comparison
+greedy_agg = greedy['output'].sum(axis=1)
+opt_agg = optimized['output'].sum(axis=1)
+
 fig_ts = go.Figure()
-fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=agg[start:end], name=scenario))
+fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=greedy_agg[start:end],
+                            name="Greedy", line=dict(color='orange')))
+fig_ts.add_trace(go.Scatter(x=list(range(start, end)), y=opt_agg[start:end],
+                            name="Optimized", line=dict(color='green')))
 
 fig_ts.add_hline(y=100, line_dash="dash", line_color="red", annotation_text="Target: 100 GW")
-fig_ts.add_hline(y=90, line_dash="dot", line_color="orange", annotation_text="90% threshold")
+fig_ts.add_hline(y=90, line_dash="dot", line_color="gray", annotation_text="90% threshold")
 fig_ts.update_layout(
     title=f"Week {week} (Hours {start}-{end})",
     xaxis_title="Hour", yaxis_title="Aggregate Output (GW)",
     yaxis_range=[0, 130], height=400
 )
 st.plotly_chart(fig_ts, use_container_width=True)
+
+st.info("**Note:** Optimized dispatch appears nearly flat at 100 GW because the optimizer successfully maintains target output. Greedy dispatch (orange) shows natural variability.")
 
 # Regional Output Chart
 st.subheader("🗺️ Output by Region")
