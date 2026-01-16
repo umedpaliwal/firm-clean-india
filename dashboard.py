@@ -19,7 +19,7 @@ if not os.path.exists(DATA_DIR):
 
 
 @st.cache_data
-def load_data(version="7GW_v2"):
+def load_data(version="7GW_v3_fp_fix"):
     """Load all results."""
     sites = pd.read_csv(f"{DATA_DIR}/selected_sites.csv")
 
@@ -32,7 +32,7 @@ def load_data(version="7GW_v2"):
     return sites, greedy, optimized
 
 
-sites, greedy, optimized = load_data("7GW_v2")
+sites, greedy, optimized = load_data("7GW_v3_fp_fix")
 
 # Header
 st.title("🌞 24/7 Clean Power from Solar+Storage in India")
@@ -89,13 +89,16 @@ st.header("📊 Key Results")
 agg = output.sum(axis=1)
 n_plants = output.shape[1]
 
+# Floating point tolerance for comparisons (handles values like 99.99999999999999)
+TARGET_TOLERANCE = 99.999  # Treat >= 99.999 as meeting 100 GW target
+
 # Aggregate metrics
 st.subheader("Aggregate (120 plants → 100 GW target)")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Energy Delivered", f"{agg.sum()/1000:.0f} TWh", f"{agg.sum()/(100*8760)*100:.1f}% of target")
 with col2:
-    st.metric("Hours ≥100 GW", f"{(agg >= 100).sum()}", f"{(agg >= 100).sum()/8760*100:.1f}%")
+    st.metric("Hours ≥100 GW", f"{(agg >= TARGET_TOLERANCE).sum()}", f"{(agg >= TARGET_TOLERANCE).sum()/8760*100:.1f}%")
 with col3:
     st.metric("Hours ≥95 GW", f"{(agg >= 95).sum()}", f"{(agg >= 95).sum()/8760*100:.1f}%")
 with col4:
@@ -257,15 +260,15 @@ output = output_selected
 n_plants = output.shape[1]
 agg_output = output.sum(axis=1)
 
-# Calculate meaningful metrics
-hours_ge_100 = (agg_output >= 100).sum()
+# Calculate meaningful metrics (with floating point tolerance)
+hours_ge_100 = (agg_output >= TARGET_TOLERANCE).sum()
 hours_ge_95 = (agg_output >= 95).sum()
 
 # Days where ALL 24 hours >= 100 GW
 perfect_days = 0
 for d in range(365):
     day_hours = agg_output[d*24:(d+1)*24]
-    if (day_hours >= 100).all():
+    if (day_hours >= TARGET_TOLERANCE).all():
         perfect_days += 1
 
 # Days where minimum hour >= 95 GW
@@ -334,9 +337,9 @@ agg_100 = hours_ge_100 / 8760 * 100
 ind_95 = (output >= 0.95).mean() * 100
 agg_95 = hours_ge_95 / 8760 * 100
 
-# Calculate greedy vs optimized for comparison
-greedy_agg_100 = (greedy['output'].sum(axis=1) >= 100).mean() * 100
-opt_agg_100 = (optimized['output'].sum(axis=1) >= 100).mean() * 100
+# Calculate greedy vs optimized for comparison (with floating point tolerance)
+greedy_agg_100 = (greedy['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
+opt_agg_100 = (optimized['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
 
 st.markdown(f"""
 **Key Insight ({scenario_label}):** With 120 plants (20% reserve margin) targeting 100 GW:
