@@ -531,6 +531,11 @@ start_h = worst_week * 168
 end_h = start_h + 168
 
 st.subheader(f"Worst Week Heatmap (Week {worst_week + 1})")
+
+# Find hours where optimized aggregate < 100 GW within this week
+opt_agg_week = optimized['output'].sum(axis=1)[start_h:end_h]
+failure_hours = np.where(opt_agg_week < 99.99)[0]  # Relative to week start
+
 fig_heatmap = go.Figure(data=go.Heatmap(
     z=output_corr[start_h:end_h, :].T,
     x=list(range(168)),
@@ -539,13 +544,21 @@ fig_heatmap = go.Figure(data=go.Heatmap(
     zmin=0, zmax=1,
     colorbar=dict(title='Output (GW)')
 ))
+
+# Mark failure hours with vertical lines
+for h in failure_hours:
+    fig_heatmap.add_vline(x=h, line_width=2, line_color="black", line_dash="solid")
+
 fig_heatmap.update_layout(
-    title=f'Plant Output During Worst Week - Green=1 GW, Red=0 GW',
+    title=f'Plant Output During Worst Week - Green=1 GW, Red=0 GW | Black lines = Aggregate < 100 GW',
     xaxis_title='Hour of Week (0-167)',
     yaxis_title='Plant ID (0-119)',
     height=500
 )
 st.plotly_chart(fig_heatmap, use_container_width=True)
+
+if len(failure_hours) > 0:
+    st.caption(f"**{len(failure_hours)} hours** with aggregate < 100 GW (marked with black vertical lines). These are the ONLY failure hours in the entire year.")
 
 with st.expander("ℹ️ How to read this heatmap"):
     st.markdown("""
