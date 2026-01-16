@@ -122,26 +122,33 @@ with col4:
 st.subheader("🌍 The Power of Geographic Diversification")
 
 # Calculate greedy metrics for diversification comparison
-greedy_plant_avail = (greedy['output'] >= 1.0).mean(axis=0) * 100
-greedy_agg_avail = (greedy['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
+greedy_out = greedy['output']
+greedy_plant_avail = (greedy_out >= 1.0).mean(axis=0) * 100
+greedy_agg_avail = (greedy_out.sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
 opt_agg_avail = (optimized['output'].sum(axis=1) >= TARGET_TOLERANCE).mean() * 100
+
+# What would happen if weather was perfectly correlated?
+# When the worst plant fails, ALL plants would fail → aggregate = 0
+# Correlated reliability ≈ worst plant reliability
+worst_plant_avail = greedy_plant_avail.min()
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Best Individual Plant", f"{greedy_plant_avail.max():.1f}%",
-              "Greedy dispatch", delta_color="off")
+    st.metric("If Weather Correlated", f"{worst_plant_avail:.1f}%",
+              "All 120 plants fail together", delta_color="off")
 with col2:
-    st.metric("120 Plants Aggregated", f"{greedy_agg_avail:.1f}%",
-              f"+{greedy_agg_avail - greedy_plant_avail.max():.1f}pp vs best plant", delta_color="off")
+    st.metric("Geographic Diversification", f"{greedy_agg_avail:.1f}%",
+              f"+{greedy_agg_avail - worst_plant_avail:.0f}pp benefit", delta_color="off")
 with col3:
     st.metric("+ Coordinated Dispatch", f"{opt_agg_avail:.1f}%",
-              f"+{opt_agg_avail - greedy_agg_avail:.1f}pp vs greedy", delta_color="off")
+              f"+{opt_agg_avail - greedy_agg_avail:.0f}pp additional", delta_color="off")
 
 st.success(f"""
-**Key Insight:** No single plant can exceed {greedy_plant_avail.max():.1f}% reliability, but **120 distributed plants achieve {greedy_agg_avail:.1f}%** through geographic diversification alone.
-Adding coordinated battery management pushes this to **{opt_agg_avail:.1f}%** — approaching perfect reliability.
-
-This works because weather patterns are not correlated across India's vast geography. When Gujarat has clouds, Tamil Nadu may have sun.
+**Why diversification works:**
+- If weather were perfectly correlated across India, all plants would fail together → only **{worst_plant_avail:.0f}%** reliability
+- But weather is **NOT** correlated: when Gujarat has clouds, Tamil Nadu may have sun
+- Geographic spread across 18 states achieves **{greedy_agg_avail:.0f}%** reliability (greedy dispatch)
+- Smart battery coordination pushes this to **{opt_agg_avail:.0f}%** — near-perfect reliability
 """)
 
 # Site Map
