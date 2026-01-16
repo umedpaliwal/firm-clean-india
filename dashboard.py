@@ -19,7 +19,7 @@ if not os.path.exists(DATA_DIR):
 
 
 @st.cache_data
-def load_data(version="7GW_v1"):
+def load_data(version="7GW_v2"):
     """Load all results."""
     sites = pd.read_csv(f"{DATA_DIR}/selected_sites.csv")
 
@@ -32,7 +32,7 @@ def load_data(version="7GW_v1"):
     return sites, greedy, optimized
 
 
-sites, greedy, optimized = load_data("7GW_v1")
+sites, greedy, optimized = load_data("7GW_v2")
 
 # Header
 st.title("🌞 24/7 Clean Power from Solar+Storage in India")
@@ -174,6 +174,73 @@ fig_ts.update_layout(
     yaxis_range=[0, 130], height=400
 )
 st.plotly_chart(fig_ts, use_container_width=True)
+
+# Regional Output Chart
+st.subheader("🗺️ Output by Region")
+
+# Define regions
+region_mapping = {
+    'Northwest': ['Rajasthan', 'Gujarat', 'Haryana', 'Jammu & Kashmir', 'Madhya Pradesh', 'Uttarakhand'],
+    'Northeast': ['Arunachal Pradesh', 'Assam', 'Meghalaya', 'Tripura', 'West Bengal'],
+    'Southwest': ['Maharashtra', 'Karnataka', 'Kerala', 'Chhattisgarh'],
+    'Southeast': ['Andhra Pradesh', 'Tamil Nadu', 'Telangana']
+}
+
+# Calculate regional output
+regional_output = {}
+regional_plants = {}
+for region, states in region_mapping.items():
+    region_mask = sites['state'].isin(states)
+    region_idx = sites[region_mask].index.tolist()
+    regional_plants[region] = len(region_idx)
+    if len(region_idx) > 0:
+        regional_output[region] = output[:, region_idx].sum(axis=1)
+    else:
+        regional_output[region] = np.zeros(8760)
+
+# Plot regional output for selected week
+fig_regional = go.Figure()
+colors = {'Northwest': '#1f77b4', 'Northeast': '#ff7f0e', 'Southwest': '#2ca02c', 'Southeast': '#d62728'}
+
+for region in ['Northwest', 'Northeast', 'Southwest', 'Southeast']:
+    fig_regional.add_trace(go.Scatter(
+        x=list(range(start, end)),
+        y=regional_output[region][start:end],
+        name=f"{region} ({regional_plants[region]} plants)",
+        line=dict(color=colors[region])
+    ))
+
+fig_regional.update_layout(
+    title=f"Regional Output - Week {week}",
+    xaxis_title="Hour",
+    yaxis_title="Regional Output (GW)",
+    height=400,
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
+st.plotly_chart(fig_regional, use_container_width=True)
+
+with st.expander("ℹ️ Regional breakdown"):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+**Northwest** (Rajasthan, Gujarat, Haryana, J&K, MP, Uttarakhand)
+- Highest solar resource
+- Affected by dust storms (Apr-May)
+
+**Northeast** (Assam, Arunachal, Meghalaya, Tripura, WB)
+- Pre-monsoon thunderstorms (Mar-May)
+- Monsoon impact (Jun-Sep)
+        """)
+    with col2:
+        st.markdown("""
+**Southwest** (Maharashtra, Karnataka, Kerala, Chhattisgarh)
+- Moderate solar resource
+- Monsoon from west coast
+
+**Southeast** (Andhra Pradesh, Tamil Nadu, Telangana)
+- Good solar resource
+- Northeast monsoon (Oct-Dec)
+        """)
 
 # Reliability Metrics
 st.header("🔬 Reliability Metrics")
