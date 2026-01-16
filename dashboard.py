@@ -210,7 +210,7 @@ for region, states in region_mapping.items():
     else:
         regional_output[region] = np.zeros(8760)
 
-# Plot regional output for selected week
+# Plot regional output as stacked area chart
 fig_regional = go.Figure()
 colors = {'Northwest': '#1f77b4', 'Northeast': '#ff7f0e', 'Southwest': '#2ca02c', 'Southeast': '#d62728'}
 
@@ -219,13 +219,17 @@ for region in ['Northwest', 'Northeast', 'Southwest', 'Southeast']:
         x=list(range(start, end)),
         y=regional_output[region][start:end],
         name=f"{region} ({regional_plants[region]} plants)",
-        line=dict(color=colors[region])
+        mode='lines',
+        stackgroup='one',
+        fillcolor=colors[region],
+        line=dict(width=0.5, color=colors[region])
     ))
 
+fig_regional.add_hline(y=100, line_dash="dash", line_color="red", annotation_text="100 GW target")
 fig_regional.update_layout(
-    title=f"Regional Output - Week {week}",
+    title=f"Regional Contributions - Week {week} (Stacked)",
     xaxis_title="Hour",
-    yaxis_title="Regional Output (GW)",
+    yaxis_title="Aggregate Output (GW)",
     height=400,
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
